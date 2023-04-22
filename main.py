@@ -11,16 +11,15 @@ from constants import BASE_DIR, MAIN_DOC_URL
 from outputs import control_output
 
 
-def whats_new(session):    
+def whats_new(session):
+    """Функция получает информацию о последних версиях Python."""
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    #session = requests_cache.CachedSession()
     response = session.get(whats_new_url)
     response.encoding = 'utf-8'    
     soup = BS(response.text, features='lxml')
     get_section = soup.find('section', attrs={'id': 'what-s-new-in-python'})
     get_div = get_section.find('div', attrs={'class': "toctree-wrapper compound"})
     get_li = get_div.find_all('li', attrs={'class': "toctree-l2"})
-    #print(get_li[0].prettify())
     result = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     for li in tqdm(get_li):        
         version_a_tag = li.find('a')
@@ -34,14 +33,10 @@ def whats_new(session):
         dl = soup_v.find('dl')
         dl_text = dl.text.replace('\n', ' ')
         result.append((ssil, h1.text, dl_text))
-        # Печать списка с данными.
-        #for row in result:
-        # Распаковка каждого кортежа при печати при помощи звездочки.
-            #print(*row)
         return result
 
 def latest_versions(session):
-    #session = requests_cache.CachedSession()
+    """Функция получает информацию о последней версии Python."""
     response = session.get(MAIN_DOC_URL)
     response.encoding = 'utf-8'
     soup = BS(response.text, 'lxml')    
@@ -64,16 +59,11 @@ def latest_versions(session):
         else:
             version, status = a_tag.text, ''
         result.append((link, version, status))
-    
-    # Печать списка с данными.
-    #for row in result:
-        # Распаковка каждого кортежа при печати при помощи звездочки.
-        #print(*row)
     return result
 
-def download(session):    
+def download(session):
+    """Функция скачивает и сохраняет файл."""
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
-    #session = requests_cache.CachedSession()
     response = session.get(downloads_url)
     response.encoding = 'utf-8'
     soup = BS(response.text, 'lxml')    
@@ -102,24 +92,18 @@ def main():
     configure_logging()
     # Отмечаем в логах момент запуска программы.
     logging.info('Парсер запущен!')
-    # Конфигурация парсера аргументов командной строки —
-    # передача в функцию допустимых вариантов выбора.
     arg_parser = configure_argument_parser(MODE_TO_FUNCTION.keys())
     # Считывание аргументов из командной строки.
     args = arg_parser.parse_args()
     # Логируем переданные аргументы командной строки.
     logging.info(f'Аргументы командной строки: {args}')
-    # Создание кеширующей сессии.
     session = requests_cache.CachedSession()
-    # Если был передан ключ '--clear-cache', то args.clear_cache == True.
     if args.clear_cache:
-        # Очистка кеша.
         session.cache.clear()    
     # Получение из аргументов командной строки нужного режима работы.
     parser_mode = args.mode
     # Поиск и вызов нужной функции по ключу словаря.
     results = MODE_TO_FUNCTION[parser_mode](session)
-    # Если из функции вернулись какие-то результаты,
     if results is not None:
         control_output(results, args)
     # Логируем завершение работы парсера.
